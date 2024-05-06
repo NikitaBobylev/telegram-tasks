@@ -1,5 +1,7 @@
-from core.apps.common.models import TimedBaseModel
 from django.db import models
+
+from core.apps.common.models import TimedBaseModel
+from core.apps.tasks.entity import Task as TaskEntity
 
 
 class Task(TimedBaseModel):

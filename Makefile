@@ -52,6 +52,9 @@ migrations:
 migrate:
 	${EXEC} ${APP_CONTAINER} ${PYTHON_MANEGE} migrate
 
+.PHONY: bot
+bot:
+	${EXEC} ${APP_CONTAINER} ${PYTHON_MANEGE} bot
 
 .PHONY: superuser
 superuser:
