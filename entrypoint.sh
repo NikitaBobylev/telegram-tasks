@@ -28,4 +28,5 @@ wait_for_port() {
 wait_for_port "postgres" 5432
 
 # Запуск Django-приложения
-python manage.py runserver 0.0.0.0:8000
+#python manage.py runserver 0.0.0.0:8000
+gunicorn core.project.wsgi --bind 0.0.0.0:8000

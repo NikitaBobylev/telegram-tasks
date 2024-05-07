@@ -1,6 +1,6 @@
-# Django Boilerplate with Docker Compose, Makefile, and PostgreSQL
+# Telegram task bot
 
-This is a basic template for Django projects configured to use Docker Compose, Makefile, and PostgreSQL.
+This is a test assignment for the Anverali Group company
 
 ## Requirements
 
@@ -17,11 +17,11 @@ This is a basic template for Django projects configured to use Docker Compose, M
    cd your_repository
 
 2. Install all required packages in `Requirements` section.
-
-
+3. Fill in env.example and change the name to .env
 ### Implemented Commands
 
 * `make app` - up application and database/infrastructure
+* `make bot` - up telegram task bot
 * `make app-logs` - follow the logs in app container
 * `make app-down` - down application and all infrastructure
 * `make storages` - up only storages. you should run your application locally for debugging/developing purposes

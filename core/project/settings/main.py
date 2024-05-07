@@ -7,9 +7,9 @@ env = environ.Env()
 environ.Env.read_env(BASE_DIR / '.env')
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -63,20 +63,7 @@ DATABASES = {
     }
 }
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
+AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'Europe/Moscow'
@@ -86,5 +73,16 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'static'
+
+# STATICFILES_DIRS = [
+#     BASE_DIR / "static",
+#     # '/var/www/static/',
+# ]
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-TELEGRAM_BOT_TOKEN=env('TELEGRAM_BOT_TOKEN')
+TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN')
