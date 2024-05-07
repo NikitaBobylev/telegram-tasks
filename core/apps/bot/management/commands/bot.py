@@ -56,8 +56,10 @@ async def _generate_tasks_responses(update: Update, context: ContextTypes.DEFAUL
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.effective_message.reply_text("Этот бот предназначен для создания ваших задач."
-                                              "\n\nИспользуте: \n/tsk - для получения задач  \n/add - для создания задач")
+    await update.effective_message.reply_text(
+        "Этот бот предназначен для создания ваших задач."
+        "\n\nИспользуте: \n/tsk - для получения задач  \n/add - для создания задач"
+    )
     return ConversationHandler.END
 
 
@@ -107,17 +109,21 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         application = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
 
-        application.add_handler(CommandHandler("start", help_command))
-        application.add_handler(CommandHandler("help", help_command))
+        start_handler = CommandHandler("start", help_command)
+        application.add_handler(start_handler)
 
-        application.add_handler(CommandHandler("tsk", get_tasks_for_user))
+        help_handler = CommandHandler("help", help_command)
+        application.add_handler(help_handler)
+
+        tsk_hadler = CommandHandler("tsk", get_tasks_for_user)
+        application.add_handler(tsk_hadler)
 
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler("add", add_task)],
             states={
                 ADD_TASK: [MessageHandler(filters.TEXT & ~filters.COMMAND, create_task)]
             },
-            fallbacks=[CommandHandler("cancel", cancel)],
+            fallbacks=[CommandHandler("cancel", cancel), tsk_hadler, help_handler, start_handler],
         )
 
         application.add_handler(conv_handler)
