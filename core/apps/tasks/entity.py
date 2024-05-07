@@ -6,5 +6,3 @@ class Task:
     text: str
     telegram_user_id: str
     id: None | int = field(default=None)
-
-

@@ -1,25 +1,21 @@
+from typing import Iterable
+
 from django.core.management import BaseCommand
 from django.conf import settings
 
 import logging
 
 from telegram import (
-    KeyboardButton,
-    KeyboardButtonPollType,
-    Poll,
-    ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
-    Update, ForceReply
+    Update
 
 )
-from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
     CommandHandler,
     ContextTypes,
     MessageHandler,
-    PollAnswerHandler,
-    PollHandler,
+    ConversationHandler,
     filters,
 
 )
@@ -35,6 +31,8 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
+ADD_TASK = 0
+
 
 def _chank_message(message: str) -> list[str]:
     max_message_lenght = 4096
@@ -49,31 +47,56 @@ def _chank_message(message: str) -> list[str]:
     return res
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.effective_user
-    await update.message.reply_html(
-        rf"Hi {user.mention_html()}!",
-        reply_markup=ForceReply(selective=True),
-    )
-
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Help!")
-
-
-async def get_tasks_for_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    task_service = TaskModelService()
-    tasks = await task_service.get_user_tasks(
-        tg_user_id=str(update.effective_user.id)
-    )
+async def _generate_tasks_responses(update: Update, context: ContextTypes.DEFAULT_TYPE,
+                                    tasks: Iterable[TaskEntity]) -> None:
     message = '\n'.join(f'{i}. {task.text}' for i, task in enumerate(tasks, start=1))
 
     for chanked_message in _chank_message(message):
         await update.message.reply_text(chanked_message)
 
 
-async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.effective_message.reply_text('Напишите вашу задачу')
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("Этот бот предназначен для создания ваших задач."
+                                    "\n\nИспользуте: \n/tsk - для получения задач  \n/add - для создания задач")
+
+
+async def get_tasks_for_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    task_service = TaskModelService()
+    tasks: Iterable[TaskEntity] = await task_service.get_user_tasks(
+        tg_user_id=str(update.effective_user.id)
+    )
+
+    if not tasks:
+        await update.message.reply_text('У вас пока нет задач')
+        return
+    await _generate_tasks_responses(update=update, context=context, tasks=tasks)
+
+
+async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.effective_message.reply_text('Напишите вашу задачу. \n Чтобы отменить используйте /cancel')
+    return ADD_TASK
+
+
+async def create_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    task_service = TaskModelService()
+    task = TaskEntity(
+        telegram_user_id=str(update.effective_user.id),
+        text=update.message.text,
+    )
+    new_tasks: Iterable[TaskEntity] = await task_service.create_task(
+        task_entity=task
+    )
+
+    await _generate_tasks_responses(update=update, context=context, tasks=new_tasks)
+    return ConversationHandler.END
+
+
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Используте: \n/tsk - для получения задач  \n/add - для создания задач", reply_markup=ReplyKeyboardRemove()
+    )
+
+    return ConversationHandler.END
 
 
 class Command(BaseCommand):
@@ -82,12 +105,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         application = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
 
-        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("start", help_command))
         application.add_handler(CommandHandler("help", help_command))
 
         application.add_handler(CommandHandler("tsk", get_tasks_for_user))
-        application.add_handler(CommandHandler("add", add_task))
-        application.add_handler(CommandHandler("delete", help_command))
+
+        conv_handler = ConversationHandler(
+            entry_points=[CommandHandler("add", add_task)],
+            states={
+                ADD_TASK: [MessageHandler(filters.TEXT & ~filters.COMMAND, create_task)]
+            },
+            fallbacks=[CommandHandler("cancel", cancel)],
+        )
+
+        application.add_handler(conv_handler)
 
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, help_command))
         application.run_polling(allowed_updates=Update.ALL_TYPES)
