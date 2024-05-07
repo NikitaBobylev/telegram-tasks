@@ -52,13 +52,18 @@ async def _generate_tasks_responses(update: Update, context: ContextTypes.DEFAUL
     message = '\n'.join(f'{i}. {task.text}' for i, task in enumerate(tasks, start=1))
 
     for chanked_message in _chank_message(message):
-        await update.effective_message.reply_text(chanked_message)
-
+        await context.bot.send_message(
+            chat_id=update.message.chat_id,
+            text=chanked_message,
+        )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.effective_message.reply_text(
-        "Этот бот предназначен для создания ваших задач."
-        "\n\nИспользуте: \n/tsk - для получения задач  \n/add - для создания задач"
+    message = ("Этот бот предназначен для создания ваших задач."
+        "\n\nИспользуте: \n/tsk - для получения задач  \n/add - для создания задач")
+
+    await context.bot.send_message(
+        chat_id=update.message.chat_id,
+        text=message,
     )
     return ConversationHandler.END
 
@@ -77,7 +82,9 @@ async def get_tasks_for_user(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.effective_message.reply_text('Напишите вашу задачу. \nЧтобы отменить используйте /cancel')
+    await update.effective_message.reply_text(
+        'Напишите вашу задачу. \nЧтобы отменить используйте /cancel'
+    )
     return ADD_TASK
 
 
@@ -97,7 +104,7 @@ async def create_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.effective_message.reply_text(
-        "Используте: \n/tsk - для получения задач  \n/add - для создания задач", reply_markup=ReplyKeyboardRemove()
+        "Используте: \n/tsk - для получения задач  \n/add - для создания задач"
     )
 
     return ConversationHandler.END
@@ -110,13 +117,10 @@ class Command(BaseCommand):
         application = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
 
         start_handler = CommandHandler("start", help_command)
-        application.add_handler(start_handler)
 
         help_handler = CommandHandler("help", help_command)
-        application.add_handler(help_handler)
 
         tsk_hadler = CommandHandler("tsk", get_tasks_for_user)
-        application.add_handler(tsk_hadler)
 
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler("add", add_task)],
@@ -127,6 +131,9 @@ class Command(BaseCommand):
         )
 
         application.add_handler(conv_handler)
+        application.add_handler(start_handler)
+        application.add_handler(help_handler)
+        application.add_handler(tsk_hadler)
 
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, help_command))
         application.run_polling(allowed_updates=Update.ALL_TYPES)
