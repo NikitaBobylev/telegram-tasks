@@ -55,12 +55,13 @@ async def _generate_tasks_responses(update: Update, context: ContextTypes.DEFAUL
         await update.effective_message.reply_text(chanked_message)
 
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.effective_message.reply_text("Этот бот предназначен для создания ваших задач."
-                                    "\n\nИспользуте: \n/tsk - для получения задач  \n/add - для создания задач")
+                                              "\n\nИспользуте: \n/tsk - для получения задач  \n/add - для создания задач")
+    return ConversationHandler.END
 
 
-async def get_tasks_for_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def get_tasks_for_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int | None:
     task_service = TaskModelService()
     tasks: Iterable[TaskEntity] = await task_service.get_user_tasks(
         tg_user_id=str(update.effective_user.id)
@@ -70,6 +71,7 @@ async def get_tasks_for_user(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.effective_message.reply_text('У вас пока нет задач')
         return
     await _generate_tasks_responses(update=update, context=context, tasks=tasks)
+    return ConversationHandler.END
 
 
 async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
