@@ -52,11 +52,11 @@ async def _generate_tasks_responses(update: Update, context: ContextTypes.DEFAUL
     message = '\n'.join(f'{i}. {task.text}' for i, task in enumerate(tasks, start=1))
 
     for chanked_message in _chank_message(message):
-        await update.message.reply_text(chanked_message)
+        await update.effective_message.reply_text(chanked_message)
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Этот бот предназначен для создания ваших задач."
+    await update.effective_message.reply_text("Этот бот предназначен для создания ваших задач."
                                     "\n\nИспользуте: \n/tsk - для получения задач  \n/add - для создания задач")
 
 
@@ -67,13 +67,13 @@ async def get_tasks_for_user(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )
 
     if not tasks:
-        await update.message.reply_text('У вас пока нет задач')
+        await update.effective_message.reply_text('У вас пока нет задач')
         return
     await _generate_tasks_responses(update=update, context=context, tasks=tasks)
 
 
 async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.effective_message.reply_text('Напишите вашу задачу. \n Чтобы отменить используйте /cancel')
+    await update.effective_message.reply_text('Напишите вашу задачу. \nЧтобы отменить используйте /cancel')
     return ADD_TASK
 
 
@@ -81,7 +81,7 @@ async def create_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     task_service = TaskModelService()
     task = TaskEntity(
         telegram_user_id=str(update.effective_user.id),
-        text=update.message.text,
+        text=update.effective_message.text,
     )
     new_tasks: Iterable[TaskEntity] = await task_service.create_task(
         task_entity=task
@@ -92,7 +92,7 @@ async def create_task(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         "Используте: \n/tsk - для получения задач  \n/add - для создания задач", reply_markup=ReplyKeyboardRemove()
     )
 
